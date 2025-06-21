@@ -13,6 +13,11 @@ function App() {
       <Layout>
         <Route exact path="/customer" component={Customer} />
         <Route exact path="/customer/new-customer" component={NewCustomer} />
+        <Route
+          exact
+          path="/customer/new-customer/:id"
+          component={NewCustomer}
+        />
         <Route exact path="/invoice" component={Invoice} />
         <Route exact path="/invoice/new-invoice" component={NewInvoice} />
       </Layout>

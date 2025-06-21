@@ -156,7 +156,9 @@ const Customer = () => {
                             icon={<EditIcon />}
                             variant="ghost"
                             onClick={() =>
-                              history.push(`/customer/new-customer`)
+                              history.push(
+                                `/customer/new-customer/${item?._id}`
+                              )
                             }
                           />
                           <IconButton
