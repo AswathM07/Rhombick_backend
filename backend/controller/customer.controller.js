@@ -5,16 +5,16 @@ const mongoose = require("mongoose");
 const getCustomer = async (req, res) => {
   try {
     // Get page and limit from query parameters, default to 1 and 10 if not provided
-    const { page = 1, limit = 10, search = '', sort = '_id' } = req.query;
+    const { page = 1, limit = 10, search = "", sort = "_id" } = req.query;
     const skip = (page - 1) * limit;
     // Create search query
     const searchQuery = search
       ? {
           $or: [
-            { name: { $regex: search, $options: 'i' } },
-            { email: { $regex: search, $options: 'i' } },
+            { name: { $regex: search, $options: "i" } },
+            { email: { $regex: search, $options: "i" } },
             // Add other fields you want to search by
-          ]
+          ],
         }
       : {};
 
@@ -25,8 +25,7 @@ const getCustomer = async (req, res) => {
     res.status(200).json({
       success: true,
       data: customers,
-      pagination: {page,limit,total,totalPages: Math.ceil(total / limit)
-      }
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
     });
   } catch (error) {
     console.log("Error in fetching customer", error.message);
@@ -79,7 +78,6 @@ const deleteCustomer = async (req, res) => {
 
 const getCustomerByID = async (req, res) => {
   const { id } = req.params;
-  console.log("dravid", id);
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return res
       .status(404)

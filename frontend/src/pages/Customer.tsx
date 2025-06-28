@@ -33,6 +33,7 @@ interface CustomerType {
   email: string;
   phoneNumber: string;
   gstNumber: string;
+  managerName?: string;
 }
 
 const Customer = () => {
@@ -121,6 +122,7 @@ const Customer = () => {
               <Tr>
                 <Th>Customer ID</Th>
                 <Th>Customer Name</Th>
+                <Th>Manager Name</Th>
                 <Th>Email</Th>
                 <Th>Phone</Th>
                 <Th>GST Number</Th>
@@ -146,6 +148,7 @@ const Customer = () => {
                     <Tr key={i}>
                       <Td>{item.customerId}</Td>
                       <Td>{item.customerName}</Td>
+                      <Td>{item.managerName ?? "-"}</Td>
                       <Td>{item.email}</Td>
                       <Td>{item.phoneNumber}</Td>
                       <Td>{item.gstNumber ?? "-"}</Td>

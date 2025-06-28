@@ -43,8 +43,10 @@ const NewCustomer: React.FC = () => {
   const [initialValues, setInitialValues] = useState({
     customerId: "",
     customerName: "",
+    managerName: "",
     email: "",
     phoneNumber: "",
+    gstNumber: "",
     address: {
       country: "",
       state: "",
@@ -54,9 +56,44 @@ const NewCustomer: React.FC = () => {
     },
   });
 
+  const fetchCustomer = async () => {
+    try {
+      setIsLoading(true);
+      const response = await axios(`/api/customer`);
+      const fetchCustNo = response.data.data;
+      if (fetchCustNo.length > 0) {
+        const maxNumber = Math.max(
+          ...fetchCustNo.map((item: any) => {
+            const raw = (item.customerId || "").toUpperCase();
+            const num = parseInt(raw.replace("CUST-", ""), 10);
+            return isNaN(num) ? 0 : num;
+          })
+        );
+        setInitialValues({
+          ...initialValues,
+          customerId: maxNumber ? `CUST-${maxNumber + 1}` : "CUST-1",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Failed to fetch customer details",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+        position: "top-right",
+      });
+      console.error("API fetch error:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     const countries = Country.getAllCountries();
     setCountryList(countries);
+    if (!id) {
+      fetchCustomer();
+    }
   }, []);
 
   useEffect(() => {
@@ -68,8 +105,10 @@ const NewCustomer: React.FC = () => {
           setInitialValues({
             customerId: data.customerId || "",
             customerName: data.customerName || "",
+            managerName: data.managerName || "",
             email: data.email || "",
             phoneNumber: data.phoneNumber || "",
+            gstNumber: data.gstNumber || "",
             address: {
               country: data.address?.country || "",
               state: data.address?.state || "",
@@ -126,8 +165,10 @@ const NewCustomer: React.FC = () => {
   const validationSchema = Yup.object({
     customerId: Yup.string().required("Customer ID is required"),
     customerName: Yup.string().required("Customer Name is required"),
+    managerName: Yup.string().required("Manager Name is required"),
     email: Yup.string().email().required("Email is required"),
     phoneNumber: Yup.string().required("Phone number is required"),
+    gstNumber: Yup.string().required("GST number is required"),
     address: Yup.object().shape({
       country: Yup.string().required("Country is required"),
       state: Yup.string().required("State is required"),
@@ -169,6 +210,7 @@ const NewCustomer: React.FC = () => {
                       type="text"
                       onChange={handleChange}
                       value={values.customerId}
+                      disabled
                     />
                     <ErrorMessage
                       name="customerId"
@@ -184,10 +226,28 @@ const NewCustomer: React.FC = () => {
                       name="customerName"
                       type="text"
                       onChange={handleChange}
+                      placeholder="Enter Customer Name"
                       value={values.customerName}
                     />
                     <ErrorMessage
                       name="customerName"
+                      component="div"
+                      className="error"
+                    />
+                  </Box>
+                </FormControl>
+                <FormControl mt={4}>
+                  <FormLabel>Manager Name</FormLabel>
+                  <Box w="100%">
+                    <Input
+                      name="managerName"
+                      type="text"
+                      onChange={handleChange}
+                      placeholder="Enter Manager Name"
+                      value={values.managerName}
+                    />
+                    <ErrorMessage
+                      name="managerName"
                       component="div"
                       className="error"
                     />
@@ -225,6 +285,24 @@ const NewCustomer: React.FC = () => {
 
                     <ErrorMessage
                       name="phoneNumber"
+                      component="div"
+                      className="error"
+                    />
+                  </Box>
+                </FormControl>
+                <FormControl mt={4}>
+                  <FormLabel>GST Number</FormLabel>
+                  <Box w="100%">
+                    <Input
+                      name="gstNumber"
+                      type="number"
+                      placeholder="Enter GST Number"
+                      onChange={handleChange}
+                      value={values.gstNumber}
+                    />
+
+                    <ErrorMessage
+                      name="gstNumber"
                       component="div"
                       className="error"
                     />
