@@ -20,6 +20,7 @@ function App() {
         />
         <Route exact path="/invoice" component={Invoice} />
         <Route exact path="/invoice/new-invoice" component={NewInvoice} />
+         <Route exact path="/invoice/new-invoice/:id" component={NewInvoice} />
       </Layout>
     </>
   );

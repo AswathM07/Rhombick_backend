@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   AlertDialog,
   AlertDialogBody,
@@ -10,7 +10,6 @@ import {
   Button,
   Flex,
   IconButton,
-  Image,
   Spinner,
   Table,
   TableContainer,
@@ -23,8 +22,10 @@ import {
   useToast,
 } from "@chakra-ui/react";
 import { AddIcon, DeleteIcon, EditIcon } from "@chakra-ui/icons";
+import { PdfIcon } from '../components/PdfIcon';
 import { useHistory } from "react-router-dom";
 import axios from "axios";
+import { generateInvoicePdf } from '../utils/generatePdf';
 
 interface CustomerType {
   _id: string;
@@ -44,24 +45,71 @@ interface InvoiceType {
   dcDate: string;
   invoiceDate: string;
   customer: CustomerType;
+  items: Array<{
+    description: string;
+    hsnSac: string;
+    quantity: number;
+    rate: number;
+    amount: number;
+  }>;
+  subtotal: number;
+  taxAmount: number;
+  totalAmount: number;
 }
 
 const Invoice = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [InvoiceList, setInvoiceList] = useState<InvoiceType[]>([]);
+  const [invoiceList, setInvoiceList] = useState<InvoiceType[]>([]);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [currentPdfId, setCurrentPdfId] = useState<string | null>(null);
   const cancelRef = useRef(null);
 
   const history = useHistory();
   const toast = useToast();
 
+    const handleGeneratePdf = async (invoice: any) => {
+    try {
+      setIsGeneratingPdf(true);
+      setCurrentPdfId(invoice._id);
+      
+      // Generate PDF and get URL
+      const pdfUrl = await generateInvoicePdf(invoice);
+      
+      if (!pdfUrl) {
+        throw new Error('PDF generation failed');
+      }
+      
+      // Open in new tab for printing
+      const printWindow = window.open(pdfUrl);
+      
+      if (!printWindow) {
+        throw new Error('Popup blocked - please allow popups for this site');
+      }
+      
+      // Optional: Auto-print after PDF loads
+      printWindow.onload = () => {
+        printWindow.print();
+      };
+      
+    } catch (error) {
+      toast({
+        title: 'PDF Generation Failed',
+        description: error.message,
+        status: 'error',
+        duration: 3000,
+      });
+    } finally {
+      setIsGeneratingPdf(false);
+      setCurrentPdfId(null);
+    }
+  };
+
   const fetchInvoice = async () => {
     try {
       setIsLoading(true);
       const response = await axios(`api/invoices`);
-
-      console.log(response.data);
       setInvoiceList(response?.data?.data);
     } catch (error) {
       toast({
@@ -107,6 +155,7 @@ const Invoice = () => {
       setIsDeleteAlertOpen(false);
     }
   };
+
   return (
     <Box>
       <Flex justifyContent="space-between" mb={4}>
@@ -148,46 +197,53 @@ const Invoice = () => {
                     <Spinner size="lg" />
                   </Td>
                 </Tr>
-              ) : InvoiceList.length === 0 ? (
+              ) : invoiceList.length === 0 ? (
                 <Tr>
                   <Td colSpan={9} rowSpan={5} textAlign="center">
                     No Data Found
                   </Td>
                 </Tr>
               ) : (
-                InvoiceList?.map((item, i) => {
-                  return (
-                    <Tr key={i}>
-                      <Td>{item.invoiceNo}</Td>
-                      <Td>{item.invoiceDate?.split("T")[0]}</Td>
-                      <Td>{item.poNo}</Td>
-                      <Td>{item.poDate?.split("T")[0]}</Td>
-                      <Td>{item.dcNo}</Td>
-                      <Td>{item?.dcDate?.split("T")[0]}</Td>
-                      <Td>{item?.customer?.customerName ?? "-"}</Td>
-                      <Td>{item?.customer?.phoneNumber ?? "-"}</Td>
-                      <Td>
-                        <Flex gap={2}>
-                          <IconButton
-                            aria-label="Edit"
-                            icon={<EditIcon />}
-                            variant="ghost"
-                            onClick={() => history.push(`/invoice/new-invoice`)}
-                          />
-                          <IconButton
-                            aria-label="Delete"
-                            icon={<DeleteIcon />}
-                            variant="ghost"
-                            onClick={() => {
-                              setDeleteId(item._id);
-                              setIsDeleteAlertOpen(true);
-                            }}
-                          />
-                        </Flex>
-                      </Td>
-                    </Tr>
-                  );
-                })
+                invoiceList?.map((item) => (
+                  <Tr key={item._id}>
+                    <Td>{item.invoiceNo}</Td>
+                    <Td>{item.invoiceDate?.split("T")[0]}</Td>
+                    <Td>{item.poNo}</Td>
+                    <Td>{item.poDate?.split("T")[0]}</Td>
+                    <Td>{item.dcNo}</Td>
+                    <Td>{item.dcDate?.split("T")[0]}</Td>
+                    <Td>{item.customer?.customerName ?? "-"}</Td>
+                    <Td>{item.customer?.phoneNumber ?? "-"}</Td>
+                    <Td>
+                      <Flex gap={2}>
+                        <IconButton
+                          aria-label="Edit"
+                          icon={<EditIcon />}
+                          variant="ghost"
+                          onClick={() => history.push(`/invoice/new-invoice/${item._id}`)}
+                        />
+                        <IconButton
+                          aria-label="PDF"
+                          icon={<PdfIcon />}
+                          variant="ghost"
+                          colorScheme="red"
+                          onClick={() => handleGeneratePdf(item)}
+                          isLoading={isGeneratingPdf && currentPdfId === item._id}
+                        />
+                        <IconButton
+                          aria-label="Delete"
+                          icon={<DeleteIcon />}
+                          variant="ghost"
+                          colorScheme="red"
+                          onClick={() => {
+                            setDeleteId(item._id);
+                            setIsDeleteAlertOpen(true);
+                          }}
+                        />
+                      </Flex>
+                    </Td>
+                  </Tr>
+                ))
               )}
             </Tbody>
           </Table>
@@ -202,12 +258,10 @@ const Invoice = () => {
               <AlertDialogHeader fontSize="lg" fontWeight="bold">
                 Delete Invoice
               </AlertDialogHeader>
-
               <AlertDialogBody>
                 Are you sure you want to delete this invoice? This action cannot
                 be undone.
               </AlertDialogBody>
-
               <AlertDialogFooter>
                 <Button
                   ref={cancelRef}

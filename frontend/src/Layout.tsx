@@ -119,10 +119,10 @@ const Header = ({ onOpen }) => {
           display={{ base: "none", md: "flex" }}
         />
         <Flex align="center" p={4} width="fit-content">
-          <Avatar name={`Dravid R`} src={""} size="sm" />
+          <Avatar name={`Aswath M`} src={""} size="sm" />
           <Box mx={2}>
             <Text fontSize="sm" fontWeight="bold">
-              Dravid R
+              Aswath M
             </Text>
           </Box>
         </Flex>

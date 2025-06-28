@@ -15,8 +15,28 @@ exports.createInvoice = async (req, res) => {
 // Get all invoices
 exports.getInvoices = async (req, res) => {
   try {
-    const invoices = await Invoice.find().populate('customer');
-    res.status(200).json({ success: true, data: invoices });
+    // Get page and limit from query parameters, default to 1 and 10 if not provided
+    const { page = 1, limit = 10, search = '', sort = '_id' } = req.query;
+    const skip = (page - 1) * limit;
+
+    // Create search query
+    const searchQuery = search
+      ? {
+          $or: [
+            { invoiceNumber: { $regex: search, $options: 'i' } },
+            { status: { $regex: search, $options: 'i' } },
+            // Add other fields you want to search by
+          ]
+        }
+      : {};
+
+    const invoices = await Invoice.find().populate('customer').skip(skip).limit(limit);
+
+    const total = await Invoice.countDocuments();
+
+    res.status(200).json({success: true,data: invoices,
+      pagination: {page,limit,total,totalPages: Math.ceil(total / limit)}
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
