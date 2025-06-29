@@ -74,7 +74,9 @@ const NewInvoice = () => {
   const { id } = useParams<{ id?: string }>();
   const [isLoading, setIsLoading] = useState(false);
   const [customers, setCustomers] = useState<CustomerType[]>([]);
-  const [selectedCustomer, setSelectedCustomer] = useState<CustomerType | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerType | null>(
+    null
+  );
   const toast = useToast();
   const history = useHistory();
 
@@ -116,20 +118,25 @@ const NewInvoice = () => {
         if (id) {
           const invoiceRes = await axios.get(`/api/invoices/${id}`);
           const invoiceData = invoiceRes.data.data;
-          
+
           // Find the customer details
-          const customer = typeof invoiceData.customer === 'string' 
-            ? customersRes.data.data.find((c: CustomerType) => c._id === invoiceData.customer)
-            : invoiceData.customer;
+          const customer =
+            typeof invoiceData.customer === "string"
+              ? customersRes.data.data.find(
+                  (c: CustomerType) => c._id === invoiceData.customer
+                )
+              : invoiceData.customer;
 
           setInitialValues({
             ...invoiceData,
             customer: customer?._id || "",
-            invoiceDate: invoiceData.invoiceDate?.split("T")[0] || new Date().toISOString().split("T")[0],
+            invoiceDate:
+              invoiceData.invoiceDate?.split("T")[0] ||
+              new Date().toISOString().split("T")[0],
             poDate: invoiceData.poDate?.split("T")[0] || "",
             dcDate: invoiceData.dcDate?.split("T")[0] || "",
           });
-          
+
           if (customer) {
             setSelectedCustomer(customer);
           }
@@ -149,6 +156,43 @@ const NewInvoice = () => {
 
     fetchData();
   }, [id]);
+
+  useEffect(() => {
+    if (!id) {
+      const fetchInvoice = async () => {
+        try {
+          setIsLoading(true);
+          const response = await axios(`/api/invoices`);
+          const fetchInvoiceNo = response.data.data;
+          if (fetchInvoiceNo.length > 0) {
+            const maxNumber = Math.max(
+              ...fetchInvoiceNo.map((item: any) => {
+                const raw = (item.invoiceNo || "").toUpperCase();
+                const num = parseInt(raw.replace("INV-", ""), 10);
+                return isNaN(num) ? 0 : num;
+              })
+            );
+            setInitialValues({
+              ...initialValues,
+              invoiceNo: maxNumber ? `INV-${maxNumber + 1}` : "INV-1",
+            });
+          }
+        } catch (error) {
+          toast({
+            title: "Failed to fetch Invoice details",
+            status: "error",
+            duration: 3000,
+            isClosable: true,
+            position: "top-right",
+          });
+          console.error("API fetch error:", error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      fetchInvoice();
+    }
+  }, []);
 
   const validationSchema = Yup.object().shape({
     invoiceNo: Yup.string().required("Invoice number is required"),
@@ -176,7 +220,7 @@ const NewInvoice = () => {
     const customer = customers.find((c) => c._id === customerId) || null;
     setSelectedCustomer(customer);
     setFieldValue("customer", customerId);
-    
+
     // Auto-set tax rates based on customer location
     if (customer) {
       const isSameState = customer.address.state === "YOUR_COMPANY_STATE"; // Replace with your company's state
@@ -191,7 +235,8 @@ const NewInvoice = () => {
       (sum, item) => sum + item.quantity * item.rate,
       0
     );
-    const taxAmount = subtotal * (values.cgstRate + values.sgstRate + values.igstRate) / 100;
+    const taxAmount =
+      (subtotal * (values.cgstRate + values.sgstRate + values.igstRate)) / 100;
     const totalAmount = subtotal + taxAmount;
 
     return {
@@ -251,8 +296,10 @@ const NewInvoice = () => {
         </Text>
       </Flex>
 
-      {isLoading && !id ? (
-        <Spinner size="xl" />
+      {isLoading ? (
+        <Box textAlign={"center"}>
+          <Spinner size="xl" />
+        </Box>
       ) : (
         <Formik
           initialValues={initialValues}
@@ -262,18 +309,26 @@ const NewInvoice = () => {
         >
           {({ values, handleChange, setFieldValue }) => {
             const amounts = calculateAmounts(values);
-            
+
             return (
               <Form>
-                <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={4}>
+                <Grid
+                  templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }}
+                  gap={4}
+                >
                   <FormControl>
                     <FormLabel>Invoice Number</FormLabel>
                     <Input
                       name="invoiceNo"
                       value={values.invoiceNo}
                       onChange={handleChange}
+                      disabled
                     />
-                    <ErrorMessage name="invoiceNo" component="div" className="error" />
+                    <ErrorMessage
+                      name="invoiceNo"
+                      component="div"
+                      className="error"
+                    />
                   </FormControl>
 
                   <FormControl>
@@ -284,7 +339,11 @@ const NewInvoice = () => {
                       value={values.invoiceDate}
                       onChange={handleChange}
                     />
-                    <ErrorMessage name="invoiceDate" component="div" className="error" />
+                    <ErrorMessage
+                      name="invoiceDate"
+                      component="div"
+                      className="error"
+                    />
                   </FormControl>
 
                   <FormControl>
@@ -339,7 +398,11 @@ const NewInvoice = () => {
                         </option>
                       ))}
                     </Select>
-                    <ErrorMessage name="customer" component="div" className="error" />
+                    <ErrorMessage
+                      name="customer"
+                      component="div"
+                      className="error"
+                    />
                   </FormControl>
                 </Grid>
 
@@ -347,7 +410,10 @@ const NewInvoice = () => {
                   <Box mt={4} p={4} borderWidth="1px" borderRadius="lg">
                     <Text fontWeight="bold">Customer Details</Text>
                     <Text>Name: {selectedCustomer.customerName}</Text>
-                    <Text>Address: {selectedCustomer.address.street}, {selectedCustomer.address.city}</Text>
+                    <Text>
+                      Address: {selectedCustomer.address.street},{" "}
+                      {selectedCustomer.address.city}
+                    </Text>
                     <Text>GSTIN: {selectedCustomer.gstNumber || "N/A"}</Text>
                     <Text>Phone: {selectedCustomer.phoneNumber}</Text>
                   </Box>
@@ -405,9 +471,13 @@ const NewInvoice = () => {
                               value={item.quantity}
                               onChange={(e) => {
                                 handleChange(e);
-                                const newQuantity = parseFloat(e.target.value) || 0;
+                                const newQuantity =
+                                  parseFloat(e.target.value) || 0;
                                 const newAmount = newQuantity * item.rate;
-                                setFieldValue(`items.${index}.amount`, newAmount);
+                                setFieldValue(
+                                  `items.${index}.amount`,
+                                  newAmount
+                                );
                               }}
                             />
                             <ErrorMessage
@@ -425,7 +495,10 @@ const NewInvoice = () => {
                                 handleChange(e);
                                 const newRate = parseFloat(e.target.value) || 0;
                                 const newAmount = item.quantity * newRate;
-                                setFieldValue(`items.${index}.amount`, newAmount);
+                                setFieldValue(
+                                  `items.${index}.amount`,
+                                  newAmount
+                                );
                               }}
                             />
                             <ErrorMessage
@@ -434,9 +507,7 @@ const NewInvoice = () => {
                               className="error"
                             />
                           </Td>
-                          <Td>
-                            {(item.quantity * item.rate).toFixed(2)}
-                          </Td>
+                          <Td>{(item.quantity * item.rate).toFixed(2)}</Td>
                           <Td>
                             <IconButton
                               aria-label="Delete item"
@@ -475,7 +546,11 @@ const NewInvoice = () => {
 
                 <Divider my={6} />
 
-                <Grid templateColumns={{ base: "1fr", md: "repeat(3, 1fr)" }} gap={4} mb={4}>
+                <Grid
+                  templateColumns={{ base: "1fr", md: "repeat(3, 1fr)" }}
+                  gap={4}
+                  mb={4}
+                >
                   <FormControl>
                     <FormLabel>CGST (%)</FormLabel>
                     <Input
@@ -517,8 +592,12 @@ const NewInvoice = () => {
                     <Text>₹{amounts.taxAmount.toFixed(2)}</Text>
                   </Flex>
                   <Flex justifyContent="space-between" mt={2}>
-                    <Text fontWeight="bold" fontSize="lg">Total Amount:</Text>
-                    <Text fontWeight="bold" fontSize="lg">₹{amounts.totalAmount.toFixed(2)}</Text>
+                    <Text fontWeight="bold" fontSize="lg">
+                      Total Amount:
+                    </Text>
+                    <Text fontWeight="bold" fontSize="lg">
+                      ₹{amounts.totalAmount.toFixed(2)}
+                    </Text>
                   </Flex>
                 </Box>
 

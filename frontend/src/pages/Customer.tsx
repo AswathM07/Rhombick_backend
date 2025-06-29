@@ -11,6 +11,7 @@ import {
   Flex,
   IconButton,
   Image,
+  Input,
   Spinner,
   Table,
   TableContainer,
@@ -25,6 +26,8 @@ import {
 import { AddIcon, DeleteIcon, EditIcon } from "@chakra-ui/icons";
 import { useHistory } from "react-router-dom";
 import axios from "axios";
+import Pagination from "../utils/Pagination";
+import { debounce } from "lodash";
 
 interface CustomerType {
   _id: string;
@@ -41,18 +44,33 @@ const Customer = () => {
   const [customerList, setCustomerList] = useState<CustomerType[]>([]);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
+
   const cancelRef = useRef(null);
 
   const history = useHistory();
   const toast = useToast();
 
+  const debouncedSearch = useRef(
+    debounce((val: string) => {
+      setSearchTerm(val);
+      setCurrentPage(1);
+    }, 500)
+  ).current;
+
   const fetchCustomer = async () => {
     try {
       setIsLoading(true);
-      const response = await axios(`api/customer`);
+      const response = await axios(
+        `api/customer?page=${currentPage}&limit=${rowsPerPage}&search=${searchTerm}`
+      );
 
       console.log(response.data);
       setCustomerList(response?.data?.data);
+      setTotalItems(response.data.pagination.total);
     } catch (error) {
       toast({
         title: "Failed to fetch customer details",
@@ -69,7 +87,7 @@ const Customer = () => {
 
   useEffect(() => {
     fetchCustomer();
-  }, []);
+  }, [currentPage, rowsPerPage, searchTerm]);
 
   const handleDelete = async (id: string) => {
     try {
@@ -103,17 +121,26 @@ const Customer = () => {
         <Text fontSize="xl" fontWeight="bold" m="auto 0">
           Customer List
         </Text>
-        <Button
-          variant="solid"
-          size={"sm"}
-          bg="black"
-          color="white"
-          _hover={{ bg: "gray.800" }}
-          leftIcon={<AddIcon />}
-          onClick={() => history.push("/customer/new-customer")}
-        >
-          New
-        </Button>
+        <Flex justifyContent="space-between" mb={4} gap={4} flexWrap="wrap">
+          <Flex gap={2} alignItems="center">
+            <Input
+              size="sm"
+              placeholder="Search customer..."
+              onChange={(e) => debouncedSearch(e.target.value)}
+            />
+            <Button
+              variant="solid"
+              size={"sm"}
+              bg="black"
+              color="white"
+              _hover={{ bg: "gray.800" }}
+              leftIcon={<AddIcon />}
+              onClick={() => history.push("/customer/new-customer")}
+            >
+              New
+            </Button>
+          </Flex>
+        </Flex>
       </Flex>
       <Box>
         <TableContainer>
@@ -182,6 +209,16 @@ const Customer = () => {
             </Tbody>
           </Table>
         </TableContainer>
+        <Pagination
+          currentPage={currentPage}
+          totalItems={totalItems}
+          rowsPerPage={rowsPerPage}
+          onPageChange={(page) => setCurrentPage(page)}
+          onRowsPerPageChange={(rows) => {
+            setRowsPerPage(rows);
+            setCurrentPage(1);
+          }}
+        />
         <AlertDialog
           isOpen={isDeleteAlertOpen}
           leastDestructiveRef={cancelRef}

@@ -10,6 +10,7 @@ import {
   Button,
   Flex,
   IconButton,
+  Input,
   Spinner,
   Table,
   TableContainer,
@@ -22,10 +23,12 @@ import {
   useToast,
 } from "@chakra-ui/react";
 import { AddIcon, DeleteIcon, EditIcon } from "@chakra-ui/icons";
-import { PdfIcon } from '../components/PdfIcon';
+import { PdfIcon } from "../components/PdfIcon";
 import { useHistory } from "react-router-dom";
 import axios from "axios";
-import { generateInvoicePdf } from '../utils/generatePdf';
+import { generateInvoicePdf } from "../utils/generatePdf";
+import Pagination from "../utils/Pagination";
+import { debounce } from "lodash";
 
 interface CustomerType {
   _id: string;
@@ -64,40 +67,50 @@ const Invoice = () => {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [currentPdfId, setCurrentPdfId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
   const cancelRef = useRef(null);
 
   const history = useHistory();
   const toast = useToast();
 
-    const handleGeneratePdf = async (invoice: any) => {
+  const debouncedSearch = useRef(
+    debounce((val: string) => {
+      setSearchTerm(val);
+      setCurrentPage(1);
+    }, 500)
+  ).current;
+
+  const handleGeneratePdf = async (invoice: any) => {
     try {
       setIsGeneratingPdf(true);
       setCurrentPdfId(invoice._id);
-      
+
       // Generate PDF and get URL
       const pdfUrl = await generateInvoicePdf(invoice);
-      
+
       if (!pdfUrl) {
-        throw new Error('PDF generation failed');
+        throw new Error("PDF generation failed");
       }
-      
+
       // Open in new tab for printing
       const printWindow = window.open(pdfUrl);
-      
+
       if (!printWindow) {
-        throw new Error('Popup blocked - please allow popups for this site');
+        throw new Error("Popup blocked - please allow popups for this site");
       }
-      
+
       // Optional: Auto-print after PDF loads
       printWindow.onload = () => {
         printWindow.print();
       };
-      
     } catch (error) {
       toast({
-        title: 'PDF Generation Failed',
+        title: "PDF Generation Failed",
         description: error.message,
-        status: 'error',
+        status: "error",
         duration: 3000,
       });
     } finally {
@@ -109,8 +122,11 @@ const Invoice = () => {
   const fetchInvoice = async () => {
     try {
       setIsLoading(true);
-      const response = await axios(`api/invoices`);
+      const response = await axios(
+        `api/invoices?page=${currentPage}&limit=${rowsPerPage}&search=${searchTerm}`
+      );
       setInvoiceList(response?.data?.data);
+      setTotalItems(response.data.pagination.total);
     } catch (error) {
       toast({
         title: "Failed to fetch invoice details",
@@ -127,7 +143,7 @@ const Invoice = () => {
 
   useEffect(() => {
     fetchInvoice();
-  }, []);
+  }, [currentPage, rowsPerPage, searchTerm]);
 
   const handleDelete = async (id: string) => {
     try {
@@ -162,17 +178,26 @@ const Invoice = () => {
         <Text fontSize="xl" fontWeight="bold" m="auto 0">
           Invoice List
         </Text>
-        <Button
-          variant="solid"
-          size={"sm"}
-          bg="black"
-          color="white"
-          _hover={{ bg: "gray.800" }}
-          leftIcon={<AddIcon />}
-          onClick={() => history.push("/invoice/new-invoice")}
-        >
-          New
-        </Button>
+        <Flex justifyContent="space-between" mb={4} gap={4} flexWrap="wrap">
+          <Flex gap={2} alignItems="center">
+            <Input
+              size="sm"
+              placeholder="Search invoice..."
+              onChange={(e) => debouncedSearch(e.target.value)}
+            />
+            <Button
+              variant="solid"
+              size={"sm"}
+              bg="black"
+              color="white"
+              _hover={{ bg: "gray.800" }}
+              leftIcon={<AddIcon />}
+              onClick={() => history.push("/invoice/new-invoice")}
+            >
+              New
+            </Button>
+          </Flex>
+        </Flex>
       </Flex>
       <Box>
         <TableContainer>
@@ -220,7 +245,9 @@ const Invoice = () => {
                           aria-label="Edit"
                           icon={<EditIcon />}
                           variant="ghost"
-                          onClick={() => history.push(`/invoice/new-invoice/${item._id}`)}
+                          onClick={() =>
+                            history.push(`/invoice/new-invoice/${item._id}`)
+                          }
                         />
                         <IconButton
                           aria-label="PDF"
@@ -228,7 +255,9 @@ const Invoice = () => {
                           variant="ghost"
                           colorScheme="red"
                           onClick={() => handleGeneratePdf(item)}
-                          isLoading={isGeneratingPdf && currentPdfId === item._id}
+                          isLoading={
+                            isGeneratingPdf && currentPdfId === item._id
+                          }
                         />
                         <IconButton
                           aria-label="Delete"
@@ -248,6 +277,16 @@ const Invoice = () => {
             </Tbody>
           </Table>
         </TableContainer>
+        <Pagination
+          currentPage={currentPage}
+          totalItems={totalItems}
+          rowsPerPage={rowsPerPage}
+          onPageChange={(page) => setCurrentPage(page)}
+          onRowsPerPageChange={(rows) => {
+            setRowsPerPage(rows);
+            setCurrentPage(1);
+          }}
+        />
         <AlertDialog
           isOpen={isDeleteAlertOpen}
           leastDestructiveRef={cancelRef}
