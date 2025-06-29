@@ -8,24 +8,39 @@ const getCustomer = async (req, res) => {
     const { page = 1, limit = 10, search = "", sort = "_id" } = req.query;
     const skip = (page - 1) * limit;
     // Create search query
-    const searchQuery = search
+     const searchQuery = search
       ? {
           $or: [
-            { name: { $regex: search, $options: "i" } },
+            { customerId: { $regex: search, $options: "i" } },
+            { customerName: { $regex: search, $options: "i" } },
             { email: { $regex: search, $options: "i" } },
-            // Add other fields you want to search by
+            { phoneNumber: { $regex: search, $options: "i" } },
+            { "address.street": { $regex: search, $options: "i" } },
+            { "address.city": { $regex: search, $options: "i" } },
+            { "address.state": { $regex: search, $options: "i" } },
+            { "address.postalCode": { $regex: search, $options: "i" } },
+            { managerName: { $regex: search, $options: "i" } },
+            { gstNumber: { $regex: search, $options: "i" } }
           ],
         }
       : {};
 
-    const customers = await Customer.find({}).skip(skip).limit(limit);
+    const customers = await Customer.find(searchQuery)
+      .sort(sort)
+      .skip(skip)
+      .limit(parseInt(limit));
 
-    const total = await Customer.countDocuments();
+    const total = await Customer.countDocuments(searchQuery);
 
     res.status(200).json({
       success: true,
       data: customers,
-      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
     });
   } catch (error) {
     console.log("Error in fetching customer", error.message);

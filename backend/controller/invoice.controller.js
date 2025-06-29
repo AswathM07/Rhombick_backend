@@ -19,23 +19,48 @@ exports.getInvoices = async (req, res) => {
     const { page = 1, limit = 10, search = '', sort = '_id' } = req.query;
     const skip = (page - 1) * limit;
 
+   
     // Create search query
     const searchQuery = search
       ? {
           $or: [
-            { invoiceNumber: { $regex: search, $options: 'i' } },
+            { invoiceNo: { $regex: search, $options: 'i' } },
+            { poNo: { $regex: search, $options: 'i' } },
+            { dcNo: { $regex: search, $options: 'i' } },
+            { 'items.description': { $regex: search, $options: 'i' } },
+            { 'items.hsnSac': { $regex: search, $options: 'i' } },
             { status: { $regex: search, $options: 'i' } },
-            // Add other fields you want to search by
+            // Search by customer name via population
+            { 'customer.customerName': { $regex: search, $options: 'i' } }
           ]
         }
       : {};
 
-    const invoices = await Invoice.find().populate('customer').skip(skip).limit(limit);
+    // Base query with population
+    let query = Invoice.find(searchQuery)
+      .populate({
+        path: 'customer',
+        select: 'customerName email phoneNumber' // Only populate necessary fields
+      })
+      .sort(sort)
+      .skip(skip)
+      .limit(parseInt(limit));
 
-    const total = await Invoice.countDocuments();
+    // Execute query and count simultaneously
+    const [invoices, total] = await Promise.all([
+      query.exec(),
+      Invoice.countDocuments(searchQuery)
+    ]);
 
-    res.status(200).json({success: true,data: invoices,
-      pagination: {page,limit,total,totalPages: Math.ceil(total / limit)}
+    res.status(200).json({
+      success: true,
+      data: invoices,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
