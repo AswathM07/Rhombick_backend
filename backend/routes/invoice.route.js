@@ -9,6 +9,21 @@ const {
   deleteInvoiceItem,addInvoiceItem,getInvoiceItem,updateInvoiceItem
 } = require("../controller/invoice.controller");
 
+// Add parameter validation middleware
+router.param('invoiceId', (req, res, next, id) => {
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ error: "Invalid invoice ID" });
+  }
+  next();
+});
+
+router.param('itemId', (req, res, next, id) => {
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ error: "Invalid item ID" });
+  }
+  next();
+});
+
 router.post("/", createInvoice);
 router.get("/", getInvoices);
 router.get("/:id", getInvoice);
