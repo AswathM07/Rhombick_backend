@@ -32,8 +32,8 @@ if (process.env.NODE_ENV === "production") {
   const { protect } = require("./controller/auth.controller");
 
   // Add auth routes before protected routes
-  app.use("/api/auth", authRoutes);
-  
+  app.use('/api/auth', authRoutes);
+
   app.use("/api/customer",customerRoutes);
   app.use("/api/invoices", invoiceRoutes);
   

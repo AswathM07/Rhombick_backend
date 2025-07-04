@@ -1,9 +1,10 @@
-// auth.route.js
+// routes/user.js
 const express = require('express');
 const router = express.Router();
-const { register, login } = require('../controller/auth.controller');
+const { getUserProfile } = require('../controllers/user');
+const verifyToken = require('../middlewares/auth');
 
-router.post('/register', register);
-router.post('/login', login);
+// Fix: Proper named parameter
+router.get('/:userId', verifyToken, getUserProfile); // Changed from potentially '/:'
 
 module.exports = router;
