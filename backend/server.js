@@ -28,11 +28,11 @@ if (process.env.NODE_ENV === "production") {
   app.get("/", (req, res) => {
     res.send("API running successfully");
   });
-  const authRoutes = require("./routes/auth.route");
-  const { protect } = require("./controller/auth.controller");
+  //const authRoutes = require("./routes/auth.route");
+  //const { protect } = require("./controller/auth.controller");
 
   // Add auth routes before protected routes
-  app.use('/api/auth', authRoutes);
+  // app.use('/api/auth', authRoutes);
 
   app.use("/api/customer",customerRoutes);
   app.use("/api/invoices", invoiceRoutes);
