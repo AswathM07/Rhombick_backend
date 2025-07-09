@@ -1,5 +1,7 @@
 const express = require("express");
 const router = express.Router();
+const mongoose = require("mongoose");
+const protect = require("../middlewares/auth");
 const {
   createInvoice,
   getInvoices,
@@ -8,6 +10,9 @@ const {
   deleteInvoice,
   deleteInvoiceItem,addInvoiceItem,getInvoiceItem,updateInvoiceItem
 } = require("../controller/invoice.controller");
+
+// Apply JWT protection to all subsequent invoice routes
+router.use(protect);
 
 // Add parameter validation middleware
 router.param('invoiceId', (req, res, next, id) => {

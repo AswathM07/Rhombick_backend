@@ -1,10 +1,9 @@
-// // routes/user.js
-// const express = require('express');
-// const router = express.Router();
-// // const { getUserProfile } = require('../controllers/user');
-// const verifyToken = require('../middlewares/auth');
+const express = require('express');
+const router = express.Router();
+const { register, login } = require('../controller/auth.controller');
 
-// // Fix: Proper named parameter
-// router.get('/:userId', verifyToken, getUserProfile); // Changed from potentially '/:'
+// Public routes
+router.post('/register', register);
+router.post('/login', login);
 
-// module.exports = router;
+module.exports = router;

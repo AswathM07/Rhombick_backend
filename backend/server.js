@@ -5,6 +5,7 @@ const connectDB = require("./config/db");
 const path = require("path")
 const customerRoutes = require("./routes/customer.route");
 const invoiceRoutes = require("./routes/invoice.route");
+const authRoutes = require("./routes/auth.route");
 
 const app = express();
 dotenv.config();
@@ -28,11 +29,8 @@ if (process.env.NODE_ENV === "production") {
   app.get("/", (req, res) => {
     res.send("API running successfully");
   });
-  //const authRoutes = require("./routes/auth.route");
-  //const { protect } = require("./controller/auth.controller");
-
-  // Add auth routes before protected routes
-  // app.use('/api/auth', authRoutes);
+  // Mount authentication routes before protected ones
+  app.use('/api/auth', authRoutes);
 
   app.use("/api/customer",customerRoutes);
   app.use("/api/invoices", invoiceRoutes);

@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const protect = require("../middlewares/auth");
 const {
   getCustomer,
   postCustomer,
@@ -7,6 +8,9 @@ const {
   deleteCustomer,
   getCustomerByID,
 } = require("../controller/customer.controller");
+
+// Apply JWT protection to all subsequent customer routes
+router.use(protect);
 
 router.get("/", getCustomer);
 
