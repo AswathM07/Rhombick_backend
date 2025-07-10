@@ -23,8 +23,9 @@ export const generateInvoicePdf = (invoice: any) => {
       body: [
         [invoice.customer.customerName, '', '', `No: ${invoice.invoiceNo}`],
         [invoice.customer.address, '', '', `Date: ${invoice.invoiceDate}`],
-        ['', '', '', `PO No: ${invoice.poNo || '-'}`],
-        ['', '', '', `DC No: ${invoice.dcNo || '-'}`]
+        [invoice.customer.email, '', '', `PO No: ${invoice.poNo || '-'}`],
+        [invoice.customer.phoneNumber, '', '', `DC No: ${invoice.dcNo || '-'}`],
+        [invoice.customer.gstNumber, '', '', ' ']
       ],
       theme: 'plain',
       styles: { fontSize: 10 }
@@ -32,7 +33,7 @@ export const generateInvoicePdf = (invoice: any) => {
 
     // 4. Add Items Table
     autoTable(doc, {
-      startY: 90,
+      startY: 100,
       head: [['SL', 'Description', 'HSN', 'Qty', 'Rate', 'Amount']],
       body: invoice.items.map((item: any, index: number) => [
         index + 1,
@@ -47,9 +48,9 @@ export const generateInvoicePdf = (invoice: any) => {
         ['', '', '', 'IGST (18%)', '', `₹${invoice.taxAmount.toFixed(2)}`],
         ['', '', '', 'TOTAL', '', `₹${invoice.totalAmount.toFixed(2)}`]
       ],
-      styles: { fontSize: 9 },
-      headStyles: { fillColor: [220, 220, 220] },
-      footStyles: { fillColor: [220, 220, 220] }
+     styles: { fontSize: 9 },
+      headStyles: { fillColor: [220, 220, 220],textColor: [0, 0, 0],fontStyle: 'bold'},
+      footStyles: { fillColor: [220, 220, 220],textColor: [0, 0, 0],fontStyle: 'bold'}
     });
 
     // 5. Add Footer
