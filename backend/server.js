@@ -38,4 +38,5 @@ if (process.env.NODE_ENV === "production") {
   app.use("/api/invoices", invoiceRoutes);
 }
 
-app.listen(5000, console.log("Server started on Port 5000"));
+const port = process.env.PORT || 5000;
+app.listen(port, console.log(`Server started on Port ${port}`));
