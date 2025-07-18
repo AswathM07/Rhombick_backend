@@ -34,7 +34,7 @@ if (process.env.NODE_ENV === "production") {
   // Add auth routes before protected routes
   // app.use('/api/auth', authRoutes);
 
-  app.use("/api/customer", customerRoutes);
+  // app.use("/api/customer", customerRoutes);
   // app.use("/api/invoices", invoiceRoutes);
 }
 
