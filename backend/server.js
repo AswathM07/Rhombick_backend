@@ -35,7 +35,7 @@ if (process.env.NODE_ENV === "production") {
   // app.use('/api/auth', authRoutes);
 
   app.use("/api/customer", customerRoutes);
-  app.use("/api/invoices", invoiceRoutes);
+  // app.use("/api/invoices", invoiceRoutes);
 }
 
 const port = process.env.PORT || 5000;
