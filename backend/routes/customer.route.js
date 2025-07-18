@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const mongoose = require("mongoose");
 const {
   getCustomer,
   postCustomer,
@@ -8,15 +9,22 @@ const {
   getCustomerByID,
 } = require("../controller/customer.controller");
 
-router.get("/", getCustomer);
+// Parameter validation middleware
+router.param('id', (req, res, next, id) => {
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ error: "Invalid customer ID format" });
+  }
+  next();
+});
 
-router.post("/", postCustomer);
+// Routes
+router.route("/")
+  .get(getCustomer)
+  .post(postCustomer);
 
-router.put("/:id", putCustomer);
+router.route("/:id")
+  .get(getCustomerByID)
+  .put(putCustomer)
+  .delete(deleteCustomer);
 
-router.delete("/:id", deleteCustomer);
-
-router.get("/:id", getCustomerByID);
-
-// Change from export default to module.exports
 module.exports = router;
