@@ -38,9 +38,12 @@ app.use("/api/invoices", invoiceRoutes);
 // Production configuration
 const __dirname1 = path.resolve();
 if (process.env.NODE_ENV === "production") {
-  const frontendDistPath = path.join(__dirname1, "..", "frontend", "dist");
+  // Modified path to correctly locate frontend build in Render environment
+  const frontendDistPath = path.join(__dirname1, "frontend", "dist");
   
+  // Check if frontend build exists
   if (fs.existsSync(frontendDistPath)) {
+    console.log("✅ Found frontend build at:", frontendDistPath);
     app.use(express.static(frontendDistPath));
     
     // SPA fallback route
@@ -49,10 +52,13 @@ if (process.env.NODE_ENV === "production") {
     });
   } else {
     console.warn("⚠️ Frontend build not found - serving API only");
+    console.log("ℹ️ Current directory structure:", fs.readdirSync(__dirname1));
+    
     app.get("*", (req, res) => {
       res.status(200).json({
         message: "API is running",
-        warning: "Frontend assets not found"
+        warning: "Frontend assets not found",
+        help: "Ensure frontend is built and placed in frontend/dist directory"
       });
     });
   }
@@ -62,17 +68,19 @@ if (process.env.NODE_ENV === "production") {
     res.json({
       status: "API running",
       environment: process.env.NODE_ENV || "development",
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      frontendPath: path.join(__dirname1, "frontend", "dist")
     });
   });
 }
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error("🚨 Error:", err.message);
+  console.error("🚨 Error:", err.stack); // Include stack trace in logs
   res.status(500).json({
     error: "Internal Server Error",
-    message: process.env.NODE_ENV === "development" ? err.message : "Something went wrong"
+    message: process.env.NODE_ENV === "development" ? err.message : "Something went wrong",
+    ...(process.env.NODE_ENV === "development" && { stack: err.stack })
   });
 });
 
@@ -83,6 +91,7 @@ const server = app.listen(PORT, () => {
   🚀 Server started on port ${PORT}
   ⏰ ${new Date().toLocaleString()}
   🌐 Environment: ${process.env.NODE_ENV || "development"}
+  📂 Working directory: ${__dirname1}
   `);
 });
 
